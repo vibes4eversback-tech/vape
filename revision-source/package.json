@@ -1,0 +1,21 @@
+{
+  "name": "revision",
+  "version": "1.0.1",
+  "description": "A brand new way to bypass censorship using a dynamic PORT system",
+  "main": "./source/server.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/transicle/Revision.git"
+  },
+  "author": "transicle",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/transicle/Revision/issues"
+  },
+  "homepage": "https://github.com/transicle/Revision#readme",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "pnpm": "^10.15.1"
+  },
+  "module": "commonjs"
+}

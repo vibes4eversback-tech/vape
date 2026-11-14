@@ -1,0 +1,17 @@
+{
+  "name": "ultrapox",
+  "display-name": "UltraPox V1",
+  "version": "39.0.108",
+  "description": "Easy deploying, Easy entertainment.",
+  "author": "UnfilteredBytes",
+  "license": "ISC",
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "preview": "vite preview",
+    "dev": "vite",
+    "start": "node .",
+    "build": "tsc && vite build && cp public_html/index.html public_html/404.html"
+  }
+}

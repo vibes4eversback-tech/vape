@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>The Cube - Rubik's Cube Game</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                user-select: none;
+            }
+
+            html {
+                -webkit-tap-highlight-color: transparent;
+                -webkit-text-size-adjust: 100%;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                overflow: hidden;
+                height: 100%;
+            }
+
+            body {
+                font-family: 'Arial', sans-serif;
+                font-weight: normal;
+                line-height: 1;
+                cursor: default;
+                overflow: hidden;
+                height: 100%;
+                font-size: 5rem;
+                background: #d1d5db;
+                position: relative;
+            }
+
+            body::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-image: linear-gradient(to bottom, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0) 100%);
+                pointer-events: none;
+            }
+
+            .ui {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                color: #070d15;
+                overflow: hidden;
+                z-index: 5;
+            }
+
+            .ui__background {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 1;
+                background: #d1d5db;
+                transition: background 500ms ease;
+            }
+
+            .ui__game {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 2;
+                pointer-events: all;
+                overflow: hidden;
+            }
+
+            .ui__game canvas {
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+
+            .ui__texts {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 3;
+                pointer-events: none;
+            }
+
+            .text {
+                position: absolute;
+                left: 0;
+                right: 0;
+                text-align: center;
+                line-height: 0.75;
+                perspective: 100rem;
+                opacity: 0;
+                transition: opacity 0.5s ease;
+            }
+
+            .text i {
+                display: inline-block;
+                opacity: 0;
+                white-space: pre-wrap;
+            }
+
+            .text--title {
+                bottom: 75%;
+                font-size: 4.4em;
+                height: 1.2em;
+            }
+
+            .text--title span {
+                display: block;
+            }
+
+            .text--title span:first-child {
+                font-size: 0.5em;
+                margin-bottom: 0.2em;
+            }
+
+            .text--note {
+                top: 87%;
+                font-size: 1em;
+                opacity: 1;
+            }
+
+            .text--timer {
+                bottom: 78%;
+                font-size: 3.5em;
+                line-height: 1;
+            }
+
+            .text--complete,
+            .text--best-time {
+                font-size: 1.5em;
+                top: 83%;
+                line-height: 1em;
+            }
+
+            .ui__prefs {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 4;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                overflow: hidden;
+                padding-top: 15em;
+            }
+
+            .ui__prefs.hidden {
+                display: none;
+            }
+
+            .ui__stats {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 4;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                overflow: hidden;
+            }
+
+            .ui__buttons {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 5;
+            }
+
+            .range {
+                position: relative;
+                width: 14em;
+                z-index: 1;
+                opacity: 1;
+                margin-bottom: 2em;
+            }
+
+            .range__label {
+                position: relative;
+                font-size: 0.9em;
+                line-height: 0.75em;
+                padding-bottom: 0.5em;
+                z-index: 2;
+            }
+
+            .range__track {
+                position: relative;
+                height: 1em;
+                margin-left: 0.5em;
+                margin-right: 0.5em;
+                z-index: 3;
+            }
+
+            .range__track-line {
+                position: absolute;
+                background: rgba(0, 0, 0, 0.2);
+                height: 2px;
+                top: 50%;
+                margin-top: -1px;
+                left: -0.5em;
+                right: -0.5em;
+                transform-origin: left center;
+            }
+
+            .range__handle {
+                position: absolute;
+                width: 0;
+                height: 0;
+                top: 50%;
+                left: 0;
+                cursor: pointer;
+                z-index: 1;
+            }
+
+            .range__handle div {
+                transition: background 500ms ease;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 0.9em;
+                height: 0.9em;
+                border-radius: 0.2em;
+                margin-left: -0.45em;
+                margin-top: -0.45em;
+                background: #41aac8;
+                border-bottom: 2px solid rgba(0, 0, 0, 0.2);
+            }
+
+            .range.is-active .range__handle div {
+                transform: scale(1.25);
+            }
+
+            .range__handle div:after {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 3em;
+                height: 3em;
+                margin-left: -1.5em;
+                margin-top: -1.5em;
+            }
+
+            .range__list {
+                display: flex;
+                flex-flow: row nowrap;
+                justify-content: space-between;
+                position: relative;
+                padding-top: 0.5em;
+                font-size: 0.55em;
+                color: rgba(0, 0, 0, 0.5);
+                z-index: 1;
+            }
+
+            .btn {
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+                background-color: transparent;
+                border-radius: 0;
+                border-width: 0;
+                position: absolute;
+                pointer-events: all;
+                font-size: 1.2em;
+                color: rgba(0, 0, 0, 0.25);
+                opacity: 0;
+                cursor: pointer;
+            }
+
+            .btn:after {
+                position: absolute;
+                content: '';
+                width: 3em;
+                height: 3em;
+                left: 50%;
+                top: 50%;
+                margin-left: -1.5em;
+                margin-top: -1.5em;
+                border-radius: 100%;
+            }
+
+            .btn--bl {
+                bottom: 0.8em;
+                left: 0.8em;
+            }
+
+            .btn--br {
+                bottom: 0.8em;
+                right: 0.8em;
+            }
+
+            .btn--bc {
+                bottom: 0.8em;
+                left: calc(50% - 0.5em);
+            }
+
+            .btn svg {
+                display: block;
+            }
+
+            .btn--cancel {
+                display: none !important;
+            }
+
+            .stats {
+                position: relative;
+                width: 14em;
+                z-index: 1;
+                display: flex;
+                justify-content: space-between;
+                opacity: 1;
+                margin-bottom: 1.5em;
+            }
+
+            .stats > i {
+                display: block;
+                color: rgba(0, 0, 0, 0.5);
+                font-size: 0.9em;
+            }
+
+            .stats > b {
+                display: block;
+                font-size: 0.9em;
+            }
+
+            .stats > b > i {
+                font-size: 0.75em;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="ui">
+            <div class="ui__background"></div>
+
+            <div class="ui__game"></div>
+
+            <div class="ui__texts">
+                <h1 class="text text--title">
+                    <span>THE</span>
+                    <span>CUBE</span>
+                </h1>
+                <div class="text text--note">
+                    Double tap to start
+                </div>
+                <div class="text text--timer" id="timer">
+                    0:00
+                </div>
+                <div class="text text--complete" id="complete" style="display:none;">
+                    <span>Complete!</span>
+                </div>
+                <div class="text text--best-time" id="bestTime" style="display:none;">
+                    <span>🏆 Best Time!</span>
+                </div>
+            </div>
+
+            <div class="ui__prefs" id="prefs">
+                <div class="range">
+                    <div class="range__label">Cube Size</div>
+                    <div class="range__track">
+                        <div class="range__track-line"></div>
+                    </div>
+                    <input type="range" min="2" max="5" value="3" class="range__handle">
+                    <div class="range__list">
+                        <span>2</span><span>3</span><span>4</span><span>5</span>
+                    </div>
+                </div>
+
+                <div class="range">
+                    <div class="range__label">Scramble Length</div>
+                    <div class="range__track">
+                        <div class="range__track-line"></div>
+                    </div>
+                    <input type="range" min="20" max="50" value="30" class="range__handle">
+                    <div class="range__list">
+                        <span>20</span><span>35</span><span>50</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui__buttons">
+                <button class="btn btn--bl" id="startBtn">▶</button>
+                <button class="btn btn--br" id="resetBtn">↺</button>
+            </div>
+        </div>
+
+        <script>
+            let scene, camera, renderer;
+            let cubeGroup;
+            let gameStarted = false;
+            let elapsedTime = 0;
+            let timerInterval;
+            let bestTime = localStorage.getItem('bestTime') || null;
+
+            function initThreeJS() {
+                const container = document.querySelector('.ui__game');
+
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xd1d5db);
+
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.z = 5;
+
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                container.appendChild(renderer.domElement);
+
+                const geometry = new THREE.BoxGeometry(2, 2, 2);
+                const material = new THREE.MeshPhongMaterial({ color: 0x41aac8 });
+                cubeGroup = new THREE.Mesh(geometry, material);
+                scene.add(cubeGroup);
+
+                const light = new THREE.DirectionalLight(0xffffff, 1);
+                light.position.set(5, 5, 5);
+                scene.add(light);
+
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                scene.add(ambientLight);
+
+                window.addEventListener('resize', onWindowResize);
+
+                animate();
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                if (cubeGroup) {
+                    cubeGroup.rotation.x += 0.005;
+                    cubeGroup.rotation.y += 0.005;
+                }
+
+                renderer.render(scene, camera);
+            }
+
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            function startGame() {
+                if (gameStarted) return;
+
+                gameStarted = true;
+                elapsedTime = 0;
+                document.getElementById('prefs').classList.add('hidden');
+                document.getElementById('startBtn').style.opacity = '0.5';
+
+                timerInterval = setInterval(() => {
+                    elapsedTime++;
+                    const minutes = Math.floor(elapsedTime / 60);
+                    const seconds = elapsedTime % 60;
+                    document.getElementById('timer').textContent = 
+                        `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    document.getElementById('timer').style.opacity = '1';
+                }, 1000);
+            }
+
+            function completeGame() {
+                gameStarted = false;
+                clearInterval(timerInterval);
+
+                const current = elapsedTime;
+                if (!bestTime || current < parseInt(bestTime)) {
+                    bestTime = current;
+                    localStorage.setItem('bestTime', bestTime);
+                    document.getElementById('bestTime').style.opacity = '1';
+                    document.getElementById('bestTime').style.display = 'block';
+                }
+
+                document.getElementById('complete').style.opacity = '1';
+                document.getElementById('complete').style.display = 'block';
+            }
+
+            function resetGame() {
+                gameStarted = false;
+                clearInterval(timerInterval);
+                elapsedTime = 0;
+
+                document.getElementById('prefs').classList.remove('hidden');
+                document.getElementById('startBtn').style.opacity = '1';
+                document.getElementById('timer').style.opacity = '0';
+                document.getElementById('complete').style.opacity = '0';
+                document.getElementById('complete').style.display = 'none';
+                document.getElementById('bestTime').style.opacity = '0';
+                document.getElementById('bestTime').style.display = 'none';
+                document.getElementById('timer').textContent = '0:00';
+            }
+
+            document.getElementById('startBtn').addEventListener('click', startGame);
+            document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+            document.addEventListener('dblclick', () => {
+                if (!gameStarted) startGame();
+                else completeGame();
+            });
+
+            window.addEventListener('DOMContentLoaded', initThreeJS);
+        </script>
+    </body>
+</html>
